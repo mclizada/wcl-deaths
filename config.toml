@@ -4,5 +4,6 @@ name = "Nexus-King Salhadaar"
 bad_abilities = [
     1224812,  # Vanquish
     1224814,  # Vanquish (variant)
+    1233702,  # Vanquish (killing blow)
     1227472,  # Besiege (actual damage)
 ]
