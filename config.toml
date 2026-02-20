@@ -1,0 +1,8 @@
+[[encounter]]
+id = 3134
+name = "Nexus-King Salhadaar"
+bad_abilities = [
+    1224812,  # Vanquish
+    1224814,  # Vanquish (variant)
+    1227472,  # Besiege (actual damage)
+]
