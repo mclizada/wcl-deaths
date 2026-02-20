@@ -8,6 +8,7 @@ pub struct Config {
 #[derive(Debug, Deserialize)]
 pub struct EncounterConfig {
     pub id: u32,
+    pub name: String,
     pub bad_abilities: Vec<u32>,
 }
 
