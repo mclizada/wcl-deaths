@@ -6,14 +6,11 @@ pub struct Actor {
     pub name: String,
     #[serde(rename = "type")]
     pub actor_type: String,
-    #[serde(rename = "subType")]
-    pub sub_type: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Fight {
     pub id: u32,
-    pub name: String,
     #[serde(rename = "encounterID")]
     pub encounter_id: u32,
     #[serde(rename = "startTime")]
@@ -21,7 +18,6 @@ pub struct Fight {
     #[serde(rename = "endTime")]
     pub end_time: f64,
     pub kill: Option<bool>,
-    pub difficulty: Option<u32>,
     #[serde(rename = "friendlyPlayers")]
     pub friendly_players: Vec<i32>,
 }
@@ -37,19 +33,6 @@ pub struct DeathEvent {
     pub timestamp: f64,
     #[serde(rename = "targetID")]
     pub target_id: i32,
-    #[serde(rename = "killerID")]
-    pub killer_id: i32,
     #[serde(rename = "killingAbilityGameID")]
-    pub killing_ability_game_id: u32,
-    pub fight: u32,
-}
-
-#[derive(Debug)]
-pub struct RankedDeath {
-    pub order: usize,
-    pub out_of: usize,
-    pub player_name: String,
-    pub killing_ability_id: u32,
-    pub killing_ability_name: String,
-    pub timestamp_ms: f64,
+    pub killing_ability_game_id: Option<u32>,
 }
