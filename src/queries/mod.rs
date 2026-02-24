@@ -106,6 +106,58 @@ pub async fn get_deaths(
     Ok(all_events)
 }
 
+pub async fn get_report_codes_for_guild(
+    client: &WclClient,
+    guild_name: &str,
+    guild_server_slug: &str,
+    guild_server_region: &str,
+    start_time: f64,
+    end_time: f64,
+) -> anyhow::Result<Vec<String>> {
+    let query = r#"
+        query GetGuildReports(
+            $guildName: String!,
+            $guildServerSlug: String!,
+            $guildServerRegion: String!,
+            $startTime: Float!,
+            $endTime: Float!
+        ) {
+          reportData {
+            reports(
+              guildName: $guildName
+              guildServerSlug: $guildServerSlug
+              guildServerRegion: $guildServerRegion
+              startTime: $startTime
+              endTime: $endTime
+            ) {
+              data {
+                code
+              }
+            }
+          }
+        }
+    "#;
+
+    let data = client.query(query, json!({
+        "guildName": guild_name,
+        "guildServerSlug": guild_server_slug,
+        "guildServerRegion": guild_server_region,
+        "startTime": start_time,
+        "endTime": end_time,
+    })).await?;
+
+    let mut codes = Vec::new();
+    if let Some(arr) = data["reportData"]["reports"]["data"].as_array() {
+        for report in arr {
+            if let Some(code) = report["code"].as_str() {
+                codes.push(code.to_string());
+            }
+        }
+    }
+
+    Ok(codes)
+}
+
 pub async fn get_ability_names(
     client: &WclClient,
     ability_ids: &[u32],

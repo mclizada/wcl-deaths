@@ -9,7 +9,11 @@ use crate::state::AppState;
 
 #[derive(Deserialize)]
 pub struct AnalyzeRequest {
-    pub reports: Vec<String>,
+    pub guild_name: String,
+    pub guild_server_slug: String,
+    pub guild_server_region: String,
+    pub start_time: f64,  // UNIX timestamp in milliseconds
+    pub end_time: f64,    // UNIX timestamp in milliseconds
     pub encounter_id: u32,
 }
 
@@ -76,12 +80,21 @@ async fn run_analyze(state: &AppState, req: AnalyzeRequest) -> anyhow::Result<An
     let bad_ability_set: HashSet<u32> = encounter_config.bad_abilities.iter().cloned().collect();
     let ability_names = queries::get_ability_names(&state.wcl, &encounter_config.bad_abilities).await?;
 
+    let report_codes = queries::get_report_codes_for_guild(
+        &state.wcl,
+        &req.guild_name,
+        &req.guild_server_slug,
+        &req.guild_server_region,
+        req.start_time,
+        req.end_time,
+    ).await?;
+
     // player_name -> Vec<(fight_id, death_order, out_of, ability_id)>
     let mut bad_deaths: HashMap<String, Vec<(u32, usize, usize, u32)>> = HashMap::new();
     // player_name -> Vec<death_order> across all deaths for avg
     let mut all_death_orders: HashMap<String, Vec<usize>> = HashMap::new();
 
-    for code in &req.reports {
+    for code in &report_codes {
         let report = queries::get_report_data(&state.wcl, code).await?;
 
         let actor_names: HashMap<i32, String> = report
