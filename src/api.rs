@@ -105,6 +105,8 @@ async fn run_analyze(state: &AppState, req: AnalyzeRequest) -> anyhow::Result<An
     let mut bad_deaths: HashMap<String, Vec<(String, u32, usize, usize, u32)>> = HashMap::new();
     // player_name -> Vec<death_order> across all deaths for avg
     let mut all_death_orders: HashMap<String, Vec<usize>> = HashMap::new();
+    // all player names seen in relevant fights
+    let mut all_players: HashSet<String> = HashSet::new();
 
     for (code, report_start_ms) in &reports {
         let date = ms_to_pacific_date(*report_start_ms);
@@ -122,6 +124,14 @@ async fn run_analyze(state: &AppState, req: AnalyzeRequest) -> anyhow::Result<An
             .iter()
             .filter(|f| f.is_real_encounter() && f.encounter_id == req.encounter_id)
             .collect();
+
+        for fight in &relevant_fights {
+            for id in &fight.friendly_players {
+                if let Some(name) = actor_names.get(id) {
+                    all_players.insert(name.clone());
+                }
+            }
+        }
 
         for fight in relevant_fights {
             let deaths = queries::get_deaths(&state.wcl, code, fight.id, fight.start_time, fight.end_time).await?;
@@ -152,8 +162,15 @@ async fn run_analyze(state: &AppState, req: AnalyzeRequest) -> anyhow::Result<An
         }
     }
 
-    let mut summary: Vec<(&String, &Vec<(String, u32, usize, usize, u32)>)> = bad_deaths.iter().collect();
-    summary.sort_by(|a, b| b.1.len().cmp(&a.1.len()));
+    let empty = Vec::new();
+    let mut all_names: Vec<&String> = all_players.iter().collect();
+    all_names.sort();
+    // Sort: bad death players first (desc), then clean players alphabetically
+    let mut summary: Vec<(&String, &Vec<(String, u32, usize, usize, u32)>)> = all_names
+        .into_iter()
+        .map(|name| (name, bad_deaths.get(name).unwrap_or(&empty)))
+        .collect();
+    summary.sort_by(|a, b| b.1.len().cmp(&a.1.len()).then(a.0.cmp(b.0)));
 
     let players = summary
         .into_iter()
