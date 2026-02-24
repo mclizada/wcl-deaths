@@ -21,8 +21,33 @@ interface Props {
   onBack: () => void
 }
 
+type SortKey = 'name' | 'bad_deaths' | 'avg_death_order' | 'early_deaths'
+type SortDir = 'asc' | 'desc'
+
 export function ResultsTable({ players, onBack }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [sortKey, setSortKey] = useState<SortKey>('bad_deaths')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
+
+  function handleSort(key: SortKey) {
+    if (key === sortKey) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortKey(key)
+      setSortDir(key === 'name' ? 'asc' : 'desc')
+    }
+  }
+
+  function sortIndicator(key: SortKey) {
+    if (key !== sortKey) return ' ↕'
+    return sortDir === 'asc' ? ' ↑' : ' ↓'
+  }
+
+  const sorted = [...players].sort((a, b) => {
+    const mul = sortDir === 'asc' ? 1 : -1
+    if (sortKey === 'name') return mul * a.name.localeCompare(b.name)
+    return mul * (a[sortKey] - b[sortKey])
+  })
 
   function toggle(name: string) {
     setExpanded(prev => {
@@ -35,7 +60,7 @@ export function ResultsTable({ players, onBack }: Props) {
   if (players.length === 0) {
     return (
       <div>
-        <p className="no-results">No bad deaths found.</p>
+        <p className="no-results">No results found.</p>
         <button className="back-btn" onClick={onBack}>← Back</button>
       </div>
     )
@@ -50,15 +75,15 @@ export function ResultsTable({ players, onBack }: Props) {
       <table className="results-table">
         <thead>
           <tr>
-            <th>Player</th>
-            <th>Bad Deaths</th>
-            <th>Avg Death Order</th>
-            <th>Top-3 Deaths</th>
+            <th className="sortable" onClick={() => handleSort('name')}>Player{sortIndicator('name')}</th>
+            <th className="sortable" onClick={() => handleSort('bad_deaths')}>Bad Deaths{sortIndicator('bad_deaths')}</th>
+            <th className="sortable" onClick={() => handleSort('avg_death_order')}>Avg Death Order{sortIndicator('avg_death_order')}</th>
+            <th className="sortable" onClick={() => handleSort('early_deaths')}>Top-3 Deaths{sortIndicator('early_deaths')}</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          {players.map(player => (
+          {sorted.map(player => (
             <>
               <tr key={player.name} className="player-row" onClick={() => toggle(player.name)}>
                 <td className="player-name">{player.name}</td>

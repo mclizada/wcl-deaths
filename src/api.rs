@@ -99,7 +99,6 @@ async fn run_analyze(state: &AppState, req: AnalyzeRequest) -> anyhow::Result<An
         req.end_time,
     ).await?;
 
-    println!("Found {} report(s): {:?}", reports.len(), reports.iter().map(|(c, _)| c).collect::<Vec<_>>());
 
     // player_name -> Vec<(date, fight_id, death_order, out_of, ability_id)>
     let mut bad_deaths: HashMap<String, Vec<(String, u32, usize, usize, u32)>> = HashMap::new();

@@ -177,6 +177,15 @@ input[type="text"]:focus {
   border-bottom: 1px solid #2a2a3a;
 }
 
+.results-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.results-table th.sortable:hover {
+  color: #ccc;
+}
+
 .player-row {
   cursor: pointer;
   border-bottom: 1px solid #1e2130;
