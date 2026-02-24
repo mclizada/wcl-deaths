@@ -113,7 +113,7 @@ pub async fn get_report_codes_for_guild(
     guild_server_region: &str,
     start_time: f64,
     end_time: f64,
-) -> anyhow::Result<Vec<String>> {
+) -> anyhow::Result<Vec<(String, f64)>> {
     let query = r#"
         query GetGuildReports(
             $guildName: String!,
@@ -132,6 +132,7 @@ pub async fn get_report_codes_for_guild(
             ) {
               data {
                 code
+                startTime
               }
             }
           }
@@ -146,16 +147,16 @@ pub async fn get_report_codes_for_guild(
         "endTime": end_time,
     })).await?;
 
-    let mut codes = Vec::new();
+    let mut reports = Vec::new();
     if let Some(arr) = data["reportData"]["reports"]["data"].as_array() {
         for report in arr {
-            if let Some(code) = report["code"].as_str() {
-                codes.push(code.to_string());
+            if let (Some(code), Some(start)) = (report["code"].as_str(), report["startTime"].as_f64()) {
+                reports.push((code.to_string(), start));
             }
         }
     }
 
-    Ok(codes)
+    Ok(reports)
 }
 
 pub async fn get_ability_names(

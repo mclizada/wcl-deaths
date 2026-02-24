@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 interface DeathDetail {
+  date: string
   fight_id: number
   death_order: number
   out_of: number
@@ -66,13 +67,24 @@ export function ResultsTable({ players, onBack }: Props) {
                 <td>{player.early_deaths}</td>
                 <td className="expand-cell">{expanded.has(player.name) ? '▲' : '▼'}</td>
               </tr>
-              {expanded.has(player.name) && player.details.map((d, i) => (
-                <tr key={`${player.name}-${i}`} className="detail-row">
-                  <td colSpan={5} className="detail-cell">
-                    Fight {d.fight_id} — died {d.death_order}/{d.out_of} to <strong>{d.ability_name}</strong>
-                  </td>
-                </tr>
-              ))}
+              {expanded.has(player.name) && (() => {
+                const byDate = player.details.reduce((acc, d) => {
+                  (acc[d.date] ??= []).push(d)
+                  return acc
+                }, {} as Record<string, DeathDetail[]>)
+                return Object.entries(byDate).sort().flatMap(([date, fights]) => [
+                  <tr key={`${player.name}-${date}-header`} className="detail-row">
+                    <td colSpan={5} className="detail-date-header">{date}</td>
+                  </tr>,
+                  ...fights.map((d, i) => (
+                    <tr key={`${player.name}-${date}-${i}`} className="detail-row">
+                      <td colSpan={5} className="detail-cell">
+                        Fight {d.fight_id} — died {d.death_order}/{d.out_of} to <strong>{d.ability_name}</strong>
+                      </td>
+                    </tr>
+                  ))
+                ])
+              })()}
             </>
           ))}
         </tbody>

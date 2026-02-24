@@ -4,8 +4,17 @@ use std::sync::Arc;
 use axum::{extract::State, Json};
 use serde::{Deserialize, Serialize};
 
+use chrono::DateTime;
+
 use crate::queries;
 use crate::state::AppState;
+
+fn ms_to_pacific_date(ms: f64) -> String {
+    // PST = UTC-8
+    let secs = (ms / 1000.0) as i64 - 8 * 3600;
+    let dt = DateTime::from_timestamp(secs, 0).expect("invalid timestamp");
+    dt.format("%Y-%m-%d").to_string()
+}
 
 #[derive(Deserialize)]
 pub struct AnalyzeRequest {
@@ -19,6 +28,7 @@ pub struct AnalyzeRequest {
 
 #[derive(Serialize)]
 pub struct DeathDetail {
+    pub date: String,
     pub fight_id: u32,
     pub death_order: usize,
     pub out_of: usize,
@@ -80,7 +90,7 @@ async fn run_analyze(state: &AppState, req: AnalyzeRequest) -> anyhow::Result<An
     let bad_ability_set: HashSet<u32> = encounter_config.bad_abilities.iter().cloned().collect();
     let ability_names = queries::get_ability_names(&state.wcl, &encounter_config.bad_abilities).await?;
 
-    let report_codes = queries::get_report_codes_for_guild(
+    let reports = queries::get_report_codes_for_guild(
         &state.wcl,
         &req.guild_name,
         &req.guild_server_slug,
@@ -89,12 +99,15 @@ async fn run_analyze(state: &AppState, req: AnalyzeRequest) -> anyhow::Result<An
         req.end_time,
     ).await?;
 
-    // player_name -> Vec<(fight_id, death_order, out_of, ability_id)>
-    let mut bad_deaths: HashMap<String, Vec<(u32, usize, usize, u32)>> = HashMap::new();
+    println!("Found {} report(s): {:?}", reports.len(), reports.iter().map(|(c, _)| c).collect::<Vec<_>>());
+
+    // player_name -> Vec<(date, fight_id, death_order, out_of, ability_id)>
+    let mut bad_deaths: HashMap<String, Vec<(String, u32, usize, usize, u32)>> = HashMap::new();
     // player_name -> Vec<death_order> across all deaths for avg
     let mut all_death_orders: HashMap<String, Vec<usize>> = HashMap::new();
 
-    for code in &report_codes {
+    for (code, report_start_ms) in &reports {
+        let date = ms_to_pacific_date(*report_start_ms);
         let report = queries::get_report_data(&state.wcl, code).await?;
 
         let actor_names: HashMap<i32, String> = report
@@ -131,7 +144,7 @@ async fn run_analyze(state: &AppState, req: AnalyzeRequest) -> anyhow::Result<An
                             bad_deaths
                                 .entry(name.clone())
                                 .or_default()
-                                .push((fight.id, index + 1, out_of, ability_id));
+                                .push((date.clone(), fight.id, index + 1, out_of, ability_id));
                         }
                     }
                 }
@@ -139,7 +152,7 @@ async fn run_analyze(state: &AppState, req: AnalyzeRequest) -> anyhow::Result<An
         }
     }
 
-    let mut summary: Vec<(&String, &Vec<(u32, usize, usize, u32)>)> = bad_deaths.iter().collect();
+    let mut summary: Vec<(&String, &Vec<(String, u32, usize, usize, u32)>)> = bad_deaths.iter().collect();
     summary.sort_by(|a, b| b.1.len().cmp(&a.1.len()));
 
     let players = summary
@@ -155,7 +168,8 @@ async fn run_analyze(state: &AppState, req: AnalyzeRequest) -> anyhow::Result<An
 
             let details = deaths
                 .iter()
-                .map(|(fight_id, order, out_of, ability_id)| DeathDetail {
+                .map(|(date, fight_id, order, out_of, ability_id)| DeathDetail {
+                    date: date.clone(),
                     fight_id: *fight_id,
                     death_order: *order,
                     out_of: *out_of,

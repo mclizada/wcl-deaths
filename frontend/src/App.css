@@ -212,3 +212,14 @@ input[type="text"]:focus {
 .detail-cell strong {
   color: #e0e0e0;
 }
+
+.detail-date-header {
+  padding: 0.4rem 0.75rem 0.4rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #7b8cde;
+  background: #13151f;
+  border-bottom: 1px solid #1a1a28;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

@@ -4,6 +4,7 @@ import { ResultsTable } from './components/ResultsTable'
 import './App.css'
 
 interface DeathDetail {
+  date: string
   fight_id: number
   death_order: number
   out_of: number
@@ -23,14 +24,28 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function handleSubmit(reports: string[], encounterId: number) {
+  async function handleSubmit(params: {
+    guildName: string
+    guildServerSlug: string
+    guildServerRegion: string
+    startTime: number
+    endTime: number
+    encounterId: number
+  }) {
     setLoading(true)
     setError(null)
     try {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reports, encounter_id: encounterId }),
+        body: JSON.stringify({
+          guild_name: params.guildName,
+          guild_server_slug: params.guildServerSlug,
+          guild_server_region: params.guildServerRegion,
+          start_time: params.startTime,
+          end_time: params.endTime,
+          encounter_id: params.encounterId,
+        }),
       })
       if (!res.ok) {
         const text = await res.text()
@@ -50,7 +65,7 @@ export default function App() {
       <h1>WCL Deaths</h1>
       {error && <div className="error">{error}</div>}
       {results === null ? (
-        <ReportForm onSubmit={handleSubmit} loading={loading} />
+          <ReportForm onSubmit={handleSubmit} loading={loading} />
       ) : (
         <ResultsTable players={results} onBack={() => setResults(null)} />
       )}
