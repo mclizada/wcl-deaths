@@ -13,7 +13,7 @@ interface DeathDetail {
 
 interface PlayerResult {
   name: string
-  bad_deaths: number
+  avoidable_deaths: number
   avg_death_order: number
   early_deaths: number
   details: DeathDetail[]

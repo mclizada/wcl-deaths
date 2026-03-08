@@ -10,7 +10,7 @@ interface DeathDetail {
 
 interface PlayerResult {
   name: string
-  bad_deaths: number
+  avoidable_deaths: number
   avg_death_order: number
   early_deaths: number
   details: DeathDetail[]
@@ -21,12 +21,12 @@ interface Props {
   onBack: () => void
 }
 
-type SortKey = 'name' | 'bad_deaths' | 'avg_death_order' | 'early_deaths'
+type SortKey = 'name' | 'avoidable_deaths' | 'avg_death_order' | 'early_deaths'
 type SortDir = 'asc' | 'desc'
 
 export function ResultsTable({ players, onBack }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
-  const [sortKey, setSortKey] = useState<SortKey>('bad_deaths')
+  const [sortKey, setSortKey] = useState<SortKey>('avoidable_deaths')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
 
   function handleSort(key: SortKey) {
@@ -69,14 +69,14 @@ export function ResultsTable({ players, onBack }: Props) {
   return (
     <div>
       <div className="results-header">
-        <h2>Bad Deaths Summary</h2>
+        <h2>Avoidable Deaths Summary</h2>
         <button className="back-btn" onClick={onBack}>← Back</button>
       </div>
       <table className="results-table">
         <thead>
           <tr>
             <th className="sortable" onClick={() => handleSort('name')}>Player{sortIndicator('name')}</th>
-            <th className="sortable" onClick={() => handleSort('bad_deaths')}>Bad Deaths{sortIndicator('bad_deaths')}</th>
+            <th className="sortable" onClick={() => handleSort('avoidable_deaths')}>Avoidable Deaths{sortIndicator('avoidable_deaths')}</th>
             <th className="sortable" onClick={() => handleSort('avg_death_order')}>Avg Death Order{sortIndicator('avg_death_order')}</th>
             <th className="sortable" onClick={() => handleSort('early_deaths')}>Top-3 Deaths{sortIndicator('early_deaths')}</th>
             <th></th>
@@ -87,7 +87,7 @@ export function ResultsTable({ players, onBack }: Props) {
             <>
               <tr key={player.name} className="player-row" onClick={() => toggle(player.name)}>
                 <td className="player-name">{player.name}</td>
-                <td>{player.bad_deaths}</td>
+                <td>{player.avoidable_deaths}</td>
                 <td>{player.avg_death_order.toFixed(1)}</td>
                 <td>{player.early_deaths}</td>
                 <td className="expand-cell">{expanded.has(player.name) ? '▲' : '▼'}</td>

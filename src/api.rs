@@ -38,7 +38,7 @@ pub struct DeathDetail {
 #[derive(Serialize)]
 pub struct PlayerResult {
     pub name: String,
-    pub bad_deaths: usize,
+    pub avoidable_deaths: usize,
     pub avg_death_order: f64,
     pub early_deaths: usize,
     pub details: Vec<DeathDetail>,
@@ -87,8 +87,8 @@ async fn run_analyze(state: &AppState, req: AnalyzeRequest) -> anyhow::Result<An
         .find(|e| e.id == req.encounter_id)
         .ok_or_else(|| anyhow::anyhow!("Encounter ID {} not found in config", req.encounter_id))?;
 
-    let bad_ability_set: HashSet<u32> = encounter_config.bad_abilities.iter().cloned().collect();
-    let ability_names = queries::get_ability_names(&state.wcl, &encounter_config.bad_abilities).await?;
+    let avoidable_ability_set: HashSet<u32> = encounter_config.avoidable_abilities.iter().cloned().collect();
+    let ability_names = queries::get_ability_names(&state.wcl, &encounter_config.avoidable_abilities).await?;
 
     let reports = queries::get_report_codes_for_guild(
         &state.wcl,
@@ -101,7 +101,7 @@ async fn run_analyze(state: &AppState, req: AnalyzeRequest) -> anyhow::Result<An
 
 
     // player_name -> Vec<(date, fight_id, death_order, out_of, ability_id)>
-    let mut bad_deaths: HashMap<String, Vec<(String, u32, usize, usize, u32)>> = HashMap::new();
+    let mut avoidable_deaths: HashMap<String, Vec<(String, u32, usize, usize, u32)>> = HashMap::new();
     // player_name -> Vec<death_order> across all deaths for avg
     let mut all_death_orders: HashMap<String, Vec<usize>> = HashMap::new();
     // all player names seen in relevant fights
@@ -149,8 +149,8 @@ async fn run_analyze(state: &AppState, req: AnalyzeRequest) -> anyhow::Result<An
                     all_death_orders.entry(name.clone()).or_default().push(index + 1);
 
                     if let Some(ability_id) = death.killing_ability_game_id {
-                        if bad_ability_set.contains(&ability_id) {
-                            bad_deaths
+                        if avoidable_ability_set.contains(&ability_id) {
+                            avoidable_deaths
                                 .entry(name.clone())
                                 .or_default()
                                 .push((date.clone(), fight.id, index + 1, out_of, ability_id));
@@ -164,10 +164,10 @@ async fn run_analyze(state: &AppState, req: AnalyzeRequest) -> anyhow::Result<An
     let empty = Vec::new();
     let mut all_names: Vec<&String> = all_players.iter().collect();
     all_names.sort();
-    // Sort: bad death players first (desc), then clean players alphabetically
+    // Sort: players with avoidable deaths first (desc), then clean players alphabetically
     let mut summary: Vec<(&String, &Vec<(String, u32, usize, usize, u32)>)> = all_names
         .into_iter()
-        .map(|name| (name, bad_deaths.get(name).unwrap_or(&empty)))
+        .map(|name| (name, avoidable_deaths.get(name).unwrap_or(&empty)))
         .collect();
     summary.sort_by(|a, b| b.1.len().cmp(&a.1.len()).then(a.0.cmp(b.0)));
 
@@ -198,7 +198,7 @@ async fn run_analyze(state: &AppState, req: AnalyzeRequest) -> anyhow::Result<An
 
             PlayerResult {
                 name: player.clone(),
-                bad_deaths: deaths.len(),
+                avoidable_deaths: deaths.len(),
                 avg_death_order,
                 early_deaths,
                 details,

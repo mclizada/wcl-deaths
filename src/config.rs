@@ -9,7 +9,7 @@ pub struct Config {
 pub struct EncounterConfig {
     pub id: u32,
     pub name: String,
-    pub bad_abilities: Vec<u32>,
+    pub avoidable_abilities: Vec<u32>,
 }
 
 pub fn load_config(path: &str) -> anyhow::Result<Config> {
